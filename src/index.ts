@@ -1,0 +1,99 @@
+/**
+ * @umituz/react-native-mascot
+ *
+ * Interactive mascot system for React Native apps
+ */
+
+import type { MascotMood, AnimationSpeed } from './domain/types/MascotTypes';
+
+// Domain - Entities
+export { Mascot } from './domain/entities/Mascot';
+
+// Domain - Types
+export type {
+  MascotType,
+  MascotStyle,
+  MascotAnimationType,
+  MascotAppearance,
+  MascotAccessory,
+  MascotPersonality,
+  MascotAnimation,
+  MascotConfig,
+  MascotState,
+  MascotInteraction,
+  MascotMood,
+  AnimationSpeed,
+} from './domain/types/MascotTypes';
+
+// Domain - Interfaces
+export type {
+  IAnimationController,
+  AnimationEvent,
+  AnimationOptions,
+} from './domain/interfaces/IAnimationController';
+
+export type {
+  IAssetManager,
+  AssetCache,
+} from './domain/interfaces/IAssetManager';
+
+export type {
+  IMascotRepository,
+} from './domain/interfaces/IMascotRepository';
+
+// Infrastructure - Repositories
+export { MascotRepository } from './infrastructure/repositories/MascotRepository';
+
+// Infrastructure - Controllers
+export { AnimationController } from './infrastructure/controllers/AnimationController';
+
+// Infrastructure - Managers
+export { AssetManager } from './infrastructure/managers/AssetManager';
+export { MascotFactory, type MascotTemplate } from './infrastructure/managers/MascotFactory';
+
+// Presentation - Components
+export { MascotView } from './presentation/components/MascotView';
+export type { MascotViewProps } from './presentation/components/MascotView';
+
+// Presentation - Hooks
+export { useMascot } from './presentation/hooks/useMascot';
+export type {
+  UseMascotOptions,
+  UseMascotReturn,
+} from './presentation/hooks/useMascot';
+
+export { useMascotAnimation } from './presentation/hooks/useMascotAnimation';
+export type {
+  UseMascotAnimationOptions,
+  UseMascotAnimationReturn,
+} from './presentation/hooks/useMascotAnimation';
+
+// Presentation - Contexts
+export { MascotProvider, useMascotContext } from './presentation/contexts/MascotContext';
+export type { MascotProviderProps, MascotContextValue } from './presentation/contexts/MascotContext';
+
+// Constants
+export const MASCOT_TEMPLATES = [
+  'friendly-bot',
+  'cute-pet',
+  'wise-owl',
+  'pixel-hero',
+] as const;
+
+export const DEFAULT_MASCOT_MOODS: MascotMood[] = [
+  'happy',
+  'sad',
+  'excited',
+  'thinking',
+  'angry',
+  'neutral',
+  'surprised',
+];
+
+export const DEFAULT_ANIMATION_SPEEDS: AnimationSpeed[] = [
+  'very-slow',
+  'slow',
+  'normal',
+  'fast',
+  'very-fast',
+];

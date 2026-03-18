@@ -1,0 +1,89 @@
+{
+  "name": "@umituz/react-native-mascot",
+  "version": "1.0.1",
+  "description": "Interactive mascot system for React Native apps - Customizable animated characters with Lottie and SVG support, mood system, and easy integration",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "react-native": "./src/index.ts",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./assets": {
+      "react-native": "./src/assets/index.ts",
+      "types": "./src/assets/index.ts",
+      "default": "./src/assets/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit --skipLibCheck",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "version:patch": "npm version patch -m 'chore: release v%s'",
+    "version:minor": "npm version minor -m 'chore: release v%s'",
+    "version:major": "npm version major -m 'chore: release v%s'",
+    "setup:skill": "node -e \"const fs = require('fs'); const path = require('path'); const skillDir = path.join(process.env.HOME, '.claude', 'skills', 'react-native-mascot'); fs.mkdirSync(skillDir, {recursive: true}); fs.copyFileSync(path.join(__dirname, 'skills/SKILL.md'), path.join(skillDir, 'SKILL.md')); console.log('✅ @umituz/react-native-mascot setup skill installed to Claude Code!');\""
+  },
+  "keywords": [
+    "react-native",
+    "mascot",
+    "avatar",
+    "character",
+    "animation",
+    "lottie",
+    "svg",
+    "interactive",
+    "gamification",
+    "engagement",
+    "ddd",
+    "domain-driven-design",
+    "type-safe"
+  ],
+  "author": "Ümit UZ <umit@umituz.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/umituz/react-native-mascot"
+  },
+  "dependencies": {
+    "lottie-react-native": "^7.3.4",
+    "react-native-reanimated": "^3.16.2"
+  },
+  "peerDependencies": {
+    "@umituz/react-native-design-system": "*",
+    "expo": ">=54.0.0",
+    "react": ">=19.0.0",
+    "react-native": "*",
+    "react-native-svg": ">=15.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@umituz/react-native-design-system": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-native": "^5.0.0",
+    "react": "19.1.0",
+    "react-native": "0.81.4",
+    "react-native-svg": "^15.12.1",
+    "typescript": "~5.9.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ]
+}

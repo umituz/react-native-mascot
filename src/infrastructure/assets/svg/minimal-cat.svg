@@ -1,0 +1,19 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Base face -->
+  <circle cx="50" cy="50" r="40" fill="currentColor" id="face"/>
+  <!-- Ears -->
+  <path d="M 20 30 L 15 15 L 35 25 Z" fill="currentColor" id="left-ear"/>
+  <path d="M 80 30 L 85 15 L 65 25 Z" fill="currentColor" id="right-ear"/>
+  <!-- Eyes -->
+  <circle cx="35" cy="45" r="5" fill="#000" id="left-eye"/>
+  <circle cx="65" cy="45" r="5" fill="#000" id="right-eye"/>
+  <!-- Nose -->
+  <path d="M 48 55 L 52 55 L 50 58 Z" fill="#FF9999" id="nose"/>
+  <!-- Mouth -->
+  <path d="M 45 60 Q 50 65 55 60" stroke="#000" stroke-width="2" fill="none" id="mouth"/>
+  <!-- Whiskers -->
+  <line x1="20" y1="55" x2="35" y2="58" stroke="#000" stroke-width="1" id="left-whisker-1"/>
+  <line x1="20" y1="60" x2="35" y2="60" stroke="#000" stroke-width="1" id="left-whisker-2"/>
+  <line x1="65" y1="58" x2="80" y2="55" stroke="#000" stroke-width="1" id="right-whisker-1"/>
+  <line x1="65" y1="60" x2="80" y2="60" stroke="#000" stroke-width="1" id="right-whisker-2"/>
+</svg>
