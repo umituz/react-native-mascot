@@ -1,6 +1,6 @@
 /**
  * Mascot Entity
- * Core mascot representation following DDD principles
+ * Core mascot representation following DDD principles with Value Objects
  */
 
 import type {
@@ -13,12 +13,16 @@ import type {
   MascotMood,
   MascotAccessory,
 } from '../types/MascotTypes';
+import { Mood, EnergyLevel, FriendlinessLevel, PlayfulnessLevel } from '../value-objects';
 
 export class Mascot {
   readonly id: string;
   readonly name: string;
   readonly type: MascotType;
-  private _personality: MascotPersonality;
+  private _mood: Mood;
+  private _energy: EnergyLevel;
+  private _friendliness: FriendlinessLevel;
+  private _playfulness: PlayfulnessLevel;
   private _appearance: MascotAppearance;
   private readonly _animations: Map<string, MascotAnimation>;
   private readonly _config: MascotConfig;
@@ -29,7 +33,10 @@ export class Mascot {
     this.id = config.id;
     this.name = config.name;
     this.type = config.type;
-    this._personality = config.personality;
+    this._mood = Mood.create(config.personality.mood);
+    this._energy = EnergyLevel.create(config.personality.energy);
+    this._friendliness = FriendlinessLevel.create(config.personality.friendliness);
+    this._playfulness = PlayfulnessLevel.create(config.personality.playfulness);
     this._appearance = config.appearance;
     this._animations = new Map(
       config.animations.map((anim) => [anim.id, anim])
@@ -46,7 +53,12 @@ export class Mascot {
 
   // Getters
   get personality(): MascotPersonality {
-    return { ...this._personality };
+    return {
+      mood: this._mood.value,
+      energy: this._energy.value,
+      friendliness: this._friendliness.value,
+      playfulness: this._playfulness.value,
+    };
   }
 
   get appearance(): MascotAppearance {
@@ -77,31 +89,58 @@ export class Mascot {
     return this._config.soundEnabled ?? false;
   }
 
-  // Personality Management
+  // Value Object Getters (for domain logic)
+  get mood(): Mood {
+    return this._mood;
+  }
+
+  get energy(): EnergyLevel {
+    return this._energy;
+  }
+
+  get friendliness(): FriendlinessLevel {
+    return this._friendliness;
+  }
+
+  get playfulness(): PlayfulnessLevel {
+    return this._playfulness;
+  }
+
+  // Personality Management (using Value Objects)
   setMood(mood: MascotMood): void {
-    this._personality.mood = mood;
+    this._mood = Mood.create(mood);
     this._state.currentMood = mood;
   }
 
-  setEnergy(energy: number): void {
-    if (energy < 0 || energy > 1) {
-      throw new Error('Energy must be between 0 and 1');
-    }
-    this._personality.energy = energy;
+  setEnergy(value: number): void {
+    this._energy = EnergyLevel.create(value);
   }
 
-  setFriendliness(friendliness: number): void {
-    if (friendliness < 0 || friendliness > 1) {
-      throw new Error('Friendliness must be between 0 and 1');
-    }
-    this._personality.friendliness = friendliness;
+  setFriendliness(value: number): void {
+    this._friendliness = FriendlinessLevel.create(value);
   }
 
-  setPlayfulness(playfulness: number): void {
-    if (playfulness < 0 || playfulness > 1) {
-      throw new Error('Playfulness must be between 0 and 1');
+  setPlayfulness(value: number): void {
+    this._playfulness = PlayfulnessLevel.create(value);
+  }
+
+  // Rich behavior with Value Objects
+  cheerUp(): void {
+    if (this._mood.isNegative()) {
+      this._mood = Mood.create('neutral');
     }
-    this._personality.playfulness = playfulness;
+  }
+
+  boostEnergy(amount: number): void {
+    this._energy = this._energy.increase(amount);
+  }
+
+  drainEnergy(amount: number): void {
+    this._energy = this._energy.decrease(amount);
+  }
+
+  makeMoreFriendly(amount: number): void {
+    this._friendliness = this._friendliness.increase(amount);
   }
 
   // Appearance Management

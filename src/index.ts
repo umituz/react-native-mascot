@@ -1,13 +1,16 @@
 /**
  * @umituz/react-native-mascot
  *
- * Interactive mascot system for React Native apps
+ * Interactive mascot system for React Native apps with DDD architecture
  */
 
 import type { MascotMood, AnimationSpeed } from './domain/types/MascotTypes';
 
 // Domain - Entities
 export { Mascot } from './domain/entities/Mascot';
+
+// Domain - Value Objects
+export { Mood, EnergyLevel, FriendlinessLevel, PlayfulnessLevel } from './domain/value-objects';
 
 // Domain - Types
 export type {
@@ -41,6 +44,35 @@ export type {
   IMascotRepository,
 } from './domain/interfaces/IMascotRepository';
 
+// Application - Services
+export { MascotService } from './application/services/MascotService';
+export type { MascotTemplate } from './application/services/MascotService';
+
+// Application - Errors
+export {
+  MascotError,
+  MascotNotInitializedError,
+  AnimationNotFoundError,
+  InvalidEnergyLevelError,
+  InvalidFriendlinessLevelError,
+  InvalidPlayfulnessLevelError,
+  InvalidMoodTransitionError,
+  MascotNotFoundError,
+  TemplateNotFoundError,
+} from './application/errors/MascotErrors';
+
+// Application - DTOs
+export type {
+  MascotDTO,
+  AnimationStateDTO,
+  MascotInitOptionsDTO,
+  AnimationPlaybackOptionsDTO,
+  MascotUpdateOptionsDTO,
+} from './application/dto/MascotDTO';
+
+// Infrastructure - DI
+export { DIContainer } from './infrastructure/di/Container';
+
 // Infrastructure - Repositories
 export { MascotRepository } from './infrastructure/repositories/MascotRepository';
 
@@ -49,7 +81,7 @@ export { AnimationController } from './infrastructure/controllers/AnimationContr
 
 // Infrastructure - Managers
 export { AssetManager } from './infrastructure/managers/AssetManager';
-export { MascotFactory, type MascotTemplate } from './infrastructure/managers/MascotFactory';
+export { MascotFactory, type MascotTemplate as FactoryMascotTemplate } from './infrastructure/managers/MascotFactory';
 
 // Presentation - Components
 export { MascotView } from './presentation/components/MascotView';
@@ -97,3 +129,9 @@ export const DEFAULT_ANIMATION_SPEEDS: AnimationSpeed[] = [
   'fast',
   'very-fast',
 ];
+
+// Convenience export - get service instance
+export const getMascotService = () => {
+  const { DIContainer } = require('./infrastructure/di/Container');
+  return DIContainer.getInstance().getMascotService();
+};

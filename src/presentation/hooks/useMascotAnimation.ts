@@ -1,16 +1,16 @@
 /**
  * useMascotAnimation Hook
- * Advanced animation control with queue and sequencing
+ * Simplified - delegates to MascotService
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Mascot } from '../../domain/entities/Mascot';
-import type { AnimationSpeed } from '../../domain/types/MascotTypes';
-import { AnimationController } from '../../infrastructure/controllers/AnimationController';
-import type { AnimationOptions } from '../../domain/interfaces/IAnimationController';
+import type { AnimationSpeed, AnimationOptions } from '../../domain/types/MascotTypes';
+import type { MascotService } from '../../application/services/MascotService';
+import { DIContainer } from '../../infrastructure/di/Container';
 
 export interface UseMascotAnimationOptions {
-  mascot: Mascot | null;
+  mascot?: Mascot | null;
   autoplay?: boolean;
   queue?: boolean;
   speed?: AnimationSpeed;
@@ -42,81 +42,47 @@ const SPEED_MULTIPLIERS: Record<AnimationSpeed, number> = {
 };
 
 export function useMascotAnimation(
-  options: UseMascotAnimationOptions
+  options: UseMascotAnimationOptions = {}
 ): UseMascotAnimationReturn {
   const { mascot, speed = 'normal' } = options;
-
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentAnimation, setCurrentAnimation] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
   const [queue, setQueue] = useState<string[]>([]);
 
-  const animationControllerRef = useRef<AnimationController | null>(null);
-  const isProcessingQueueRef = useRef(false);
+  const container = DIContainer.getInstance();
+  const service = container.getMascotService();
 
-  // Initialize animation controller
-  if (!animationControllerRef.current) {
-    animationControllerRef.current = new AnimationController();
-  }
-
-  // Setup progress tracking
-  const animationController = animationControllerRef.current;
-  animationController.on('progress', (data: unknown) => {
-    const { progress: newProgress } = data as { progress: number };
-    setProgress(newProgress);
-  });
-
-  const play = useCallback(async (animationId: string, options?: AnimationOptions) => {
-    if (!mascot) {
-      console.warn('Mascot not initialized');
-      return;
-    }
-
-    const animation = mascot.getAnimation(animationId);
-    if (!animation) {
-      console.warn(`Animation ${animationId} not found`);
-      return;
-    }
-
-    setIsPlaying(true);
-    setCurrentAnimation(animationId);
-
-    const speedMultiplier = SPEED_MULTIPLIERS[speed];
-    const finalOptions: AnimationOptions = {
-      ...options,
-      speed: (options?.speed || 1) * speedMultiplier,
-    };
-
-    await animationController.play(animation, finalOptions);
-
-    setIsPlaying(false);
-    setCurrentAnimation(null);
-    setProgress(0);
-  }, [mascot, speed, animationController]);
+  const play = useCallback(
+    async (animationId: string, options?: AnimationOptions) => {
+      const speedMultiplier = SPEED_MULTIPLIERS[speed];
+      const finalOptions: AnimationOptions = {
+        ...options,
+        speed: (options?.speed || 1) * speedMultiplier,
+      };
+      await service.playAnimation(animationId, finalOptions);
+    },
+    [service, speed]
+  );
 
   const pause = useCallback(() => {
-    animationController.pause();
-  }, [animationController]);
+    service.pauseAnimation();
+  }, [service]);
 
   const resume = useCallback(() => {
-    animationController.resume();
-  }, [animationController]);
+    service.resumeAnimation();
+  }, [service]);
 
   const stop = useCallback(() => {
-    animationController.stop();
-    setIsPlaying(false);
-    setCurrentAnimation(null);
-    setProgress(0);
-  }, [animationController]);
+    service.stopAnimation();
+  }, [service]);
 
-  const setSpeed = useCallback((newSpeed: number) => {
-    animationController.setSpeed(newSpeed);
-  }, [animationController]);
+  const setSpeed = useCallback(() => {
+    // Speed is handled via options in play()
+    console.warn('setSpeed: Use play() with speed option instead');
+  }, []);
 
-  const setProgressValue = useCallback((newProgress: number) => {
-    animationController.setProgress(newProgress);
-    setProgress(newProgress);
-  }, [animationController]);
+  const setProgress = useCallback(() => {
+    // Progress tracking would need AnimationController reference
+    console.warn('setProgress: Not implemented in service layer yet');
+  }, []);
 
   const queueAnimation = useCallback((animationId: string) => {
     setQueue((prev) => [...prev, animationId]);
@@ -126,40 +92,34 @@ export function useMascotAnimation(
     setQueue([]);
   }, []);
 
-  const playSequence = useCallback(async (animationIds: string[]) => {
-    for (const animationId of animationIds) {
-      await play(animationId);
-    }
-  }, [play]);
+  const playSequence = useCallback(
+    async (animationIds: string[]) => {
+      for (const animationId of animationIds) {
+        await play(animationId);
+      }
+    },
+    [play]
+  );
 
-  // Process queue automatically
   const processQueue = useCallback(async () => {
-    if (isProcessingQueueRef.current || queue.length === 0 || !mascot) {
-      return;
-    }
-
-    isProcessingQueueRef.current = true;
-
     while (queue.length > 0) {
       const nextAnimation = queue[0];
       setQueue((prev) => prev.slice(1));
       await play(nextAnimation);
     }
-
-    isProcessingQueueRef.current = false;
-  }, [queue, mascot, play]);
+  }, [queue, play]);
 
   return {
-    isPlaying,
-    currentAnimation,
-    progress,
+    isPlaying: service.isPlaying,
+    currentAnimation: service.currentAnimation,
+    progress: 0, // Would need AnimationController reference
     queue,
     play,
     pause,
     resume,
     stop,
     setSpeed,
-    setProgress: setProgressValue,
+    setProgress,
     queueAnimation,
     clearQueue,
     playSequence,

@@ -1,135 +1,53 @@
 /**
- * Mascot Context
- * Provides mascot state and functionality to components
+ * MascotContext
+ * Thin wrapper that provides MascotService to components
  */
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { Mascot } from '../../domain/entities/Mascot';
+import React, { createContext, useContext, ReactNode } from 'react';
+import type { Mascot } from '../../domain/entities/Mascot';
 import type { MascotConfig, MascotMood } from '../../domain/types/MascotTypes';
-import { MascotFactory } from '../../infrastructure/managers/MascotFactory';
-import { AnimationController } from '../../infrastructure/controllers/AnimationController';
 import type { AnimationOptions } from '../../domain/interfaces/IAnimationController';
+import type { MascotService, MascotTemplate } from '../../application/services/MascotService';
+import { DIContainer } from '../../infrastructure/di/Container';
 
 export interface MascotContextValue {
   mascot: Mascot | null;
   isPlaying: boolean;
   currentAnimation: string | null;
-  initializeMascot: (config: MascotConfig) => void;
-  initializeFromTemplate: (template: string, customizations?: Partial<MascotConfig>) => void;
-  setMood: (mood: MascotMood) => void;
-  playAnimation: (animationId: string, options?: AnimationOptions) => Promise<void>;
-  stopAnimation: () => void;
-  updateAppearance: (appearance: Partial<MascotConfig['appearance']>) => void;
-  setVisible: (visible: boolean) => void;
+  service: MascotService;
 }
 
 const MascotContext = createContext<MascotContextValue | undefined>(undefined);
 
-export interface MascotProviderProps extends React.PropsWithChildren {
+export interface MascotProviderProps {
+  children: ReactNode;
   initialConfig?: MascotConfig;
-  template?: string;
+  template?: MascotTemplate;
 }
 
 export const MascotProvider: React.FC<MascotProviderProps> = ({
   children,
-  initialConfig: _initialConfig,
-  template: _template,
+  initialConfig,
+  template,
 }) => {
-  const [mascot, setMascot] = useState<Mascot | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentAnimation, setCurrentAnimation] = useState<string | null>(null);
-  const animationControllerRef = useRef<AnimationController | null>(null);
+  const container = DIContainer.getInstance();
+  const service = container.getMascotService();
 
-  const initializeMascot = useCallback((config: MascotConfig) => {
-    const newMascot = new Mascot(config);
-    setMascot(newMascot);
-    if (!animationControllerRef.current) {
-      animationControllerRef.current = new AnimationController();
-    }
-  }, []);
-
-  const initializeFromTemplate = useCallback((
-    templateName: string,
-    customizations?: Partial<MascotConfig>
-  ) => {
-    const template = templateName as 'friendly-bot' | 'cute-pet' | 'wise-owl' | 'pixel-hero';
-    const newMascot = MascotFactory.createFromTemplate(template, customizations);
-    setMascot(newMascot);
-    if (!animationControllerRef.current) {
-      animationControllerRef.current = new AnimationController();
-    }
-  }, []);
-
-  const setMood = useCallback((mood: MascotMood) => {
-    setMascot((prev) => {
-      if (!prev) return null;
-      prev.setMood(mood);
-      return prev.clone();
-    });
-  }, []);
-
-  const playAnimation = useCallback(async (animationId: string, options?: AnimationOptions) => {
-    if (!mascot || !animationControllerRef.current) return;
-
-    const animation = mascot.getAnimation(animationId);
-    if (!animation) {
-      console.warn(`Animation ${animationId} not found`);
-      return;
-    }
-
-    setIsPlaying(true);
-    setCurrentAnimation(animationId);
-
-    if (animationControllerRef.current) {
-      await animationControllerRef.current.play(animation, options);
-    }
-
-    setIsPlaying(false);
-    setCurrentAnimation(null);
-  }, [mascot]);
-
-  const stopAnimation = useCallback(() => {
-    if (animationControllerRef.current) {
-      animationControllerRef.current.stop();
-    }
-    setIsPlaying(false);
-    setCurrentAnimation(null);
-  }, []);
-
-  const updateAppearance = useCallback((appearance: Partial<MascotConfig['appearance']>) => {
-    setMascot((prev) => {
-      if (!prev) return null;
-      prev.updateAppearance(appearance);
-      return prev.clone();
-    });
-  }, []);
-
-  const setVisible = useCallback((visible: boolean) => {
-    setMascot((prev) => {
-      if (!prev) return null;
-      prev.setVisible(visible);
-      return prev.clone();
-    });
-  }, []);
+  // Auto-initialize if config or template provided
+  if (initialConfig) {
+    service.initialize(initialConfig);
+  } else if (template) {
+    service.fromTemplate(template);
+  }
 
   const value: MascotContextValue = {
-    mascot,
-    isPlaying,
-    currentAnimation,
-    initializeMascot,
-    initializeFromTemplate,
-    setMood,
-    playAnimation,
-    stopAnimation,
-    updateAppearance,
-    setVisible,
+    mascot: service.mascot,
+    isPlaying: service.isPlaying,
+    currentAnimation: service.currentAnimation,
+    service,
   };
 
-  return (
-    <MascotContext.Provider value={value}>
-      {children}
-    </MascotContext.Provider>
-  );
+  return <MascotContext.Provider value={value}>{children}</MascotContext.Provider>;
 };
 
 export const useMascotContext = (): MascotContextValue => {
