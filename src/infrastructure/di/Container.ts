@@ -61,6 +61,7 @@ export class DIContainer {
   getMascotService(): MascotService {
     if (!this._mascotService) {
       // Lazy import to avoid circular dependencies
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { MascotService } = require('../../application/services/MascotService');
       this._mascotService = new MascotService(
         this.getRepository(),
@@ -68,7 +69,7 @@ export class DIContainer {
         this.getAssetManager()
       );
     }
-    return this._mascotService;
+    return this._mascotService!;
   }
 
   /**

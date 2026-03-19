@@ -5,7 +5,7 @@
  */
 
 import { Mascot } from '../../domain/entities/Mascot';
-import type { MascotConfig, MascotMood, MascotAppearance, MascotAccessory } from '../../domain/types/MascotTypes';
+import type { MascotConfig, MascotMood, MascotAppearance } from '../../domain/types/MascotTypes';
 import type { IMascotRepository } from '../../domain/interfaces/IMascotRepository';
 import type { IAnimationController, AnimationOptions } from '../../domain/interfaces/IAnimationController';
 import type { IAssetManager } from '../../domain/interfaces/IAssetManager';
@@ -21,8 +21,11 @@ export class MascotService {
   constructor(
     private readonly _repository: IMascotRepository,
     private readonly _animationController: IAnimationController,
-    private readonly _assetManager: IAssetManager
-  ) {}
+    _assetManager: IAssetManager
+  ) {
+    // Asset manager is available for future use but not currently needed
+    void _assetManager;
+  }
 
   // ✅ Initialization
   async initialize(config: MascotConfig): Promise<void> {

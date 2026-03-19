@@ -5,8 +5,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import type { Mascot } from '../../domain/entities/Mascot';
-import type { MascotConfig, MascotMood } from '../../domain/types/MascotTypes';
-import type { AnimationOptions } from '../../domain/interfaces/IAnimationController';
+import type { MascotConfig } from '../../domain/types/MascotTypes';
 import type { MascotService, MascotTemplate } from '../../application/services/MascotService';
 import { DIContainer } from '../../infrastructure/di/Container';
 
@@ -29,7 +28,7 @@ export const MascotProvider: React.FC<MascotProviderProps> = ({
   children,
   initialConfig,
   template,
-}) => {
+}: MascotProviderProps) => {
   const container = DIContainer.getInstance();
   const service = container.getMascotService();
 

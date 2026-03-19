@@ -3,21 +3,16 @@
  * Pre-configured mascots and animations
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import type { MascotConfig, MascotAnimationType } from '../domain/types/MascotTypes';
+import type { MascotAnimation } from '../domain/types/MascotTypes';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const idleAnim = require('./lottie/idle.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const waveAnim = require('./lottie/wave.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const jumpAnim = require('./lottie/jump.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const successAnim = require('./lottie/success.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const errorAnim = require('./lottie/error.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const danceAnim = require('./lottie/dance.json');
+// Import JSON animations
+import idleAnim from './lottie/idle.json';
+import waveAnim from './lottie/wave.json';
+import jumpAnim from './lottie/jump.json';
+import successAnim from './lottie/success.json';
+import errorAnim from './lottie/error.json';
+import danceAnim from './lottie/dance.json';
 
 export const BUILT_IN_MASCOTS: Record<string, MascotConfig> = {
   'happy-robot': {
@@ -42,7 +37,7 @@ export const BUILT_IN_MASCOTS: Record<string, MascotConfig> = {
         id: 'idle',
         name: 'Idle',
         type: 'idle' as MascotAnimationType,
-        source: idleAnim,
+        source: idleAnim as MascotAnimation['source'],
         loop: true,
         autoplay: true,
       },
@@ -50,35 +45,35 @@ export const BUILT_IN_MASCOTS: Record<string, MascotConfig> = {
         id: 'wave',
         name: 'Wave',
         type: 'action' as MascotAnimationType,
-        source: waveAnim,
+        source: waveAnim as MascotAnimation['source'],
         loop: false,
       },
       {
         id: 'jump',
         name: 'Jump',
         type: 'action' as MascotAnimationType,
-        source: jumpAnim,
+        source: jumpAnim as MascotAnimation['source'],
         loop: false,
       },
       {
         id: 'success',
         name: 'Success',
         type: 'reaction' as MascotAnimationType,
-        source: successAnim,
+        source: successAnim as MascotAnimation['source'],
         loop: false,
       },
       {
         id: 'error',
         name: 'Error',
         type: 'reaction' as MascotAnimationType,
-        source: errorAnim,
+        source: errorAnim as MascotAnimation['source'],
         loop: false,
       },
       {
         id: 'dance',
         name: 'Dance',
         type: 'action' as MascotAnimationType,
-        source: danceAnim,
+        source: danceAnim as MascotAnimation['source'],
         loop: true,
       },
     ],

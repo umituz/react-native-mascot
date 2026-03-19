@@ -13,7 +13,10 @@ import type {
   MascotMood,
   MascotAccessory,
 } from '../types/MascotTypes';
-import { Mood, EnergyLevel, FriendlinessLevel, PlayfulnessLevel } from '../value-objects';
+import { Mood } from '../value-objects/Mood';
+import { EnergyLevel } from '../value-objects/EnergyLevel';
+import { FriendlinessLevel } from '../value-objects/FriendlinessLevel';
+import { PlayfulnessLevel } from '../value-objects/PlayfulnessLevel';
 
 export class Mascot {
   readonly id: string;
@@ -246,7 +249,7 @@ export class Mascot {
       id: this.id,
       name: this.name,
       type: this.type,
-      personality: this._personality,
+      personality: this.personality,
       appearance: this._appearance,
       state: this._state,
       config: this._config,

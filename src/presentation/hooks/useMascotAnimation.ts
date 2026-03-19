@@ -4,15 +4,10 @@
  */
 
 import { useCallback, useState } from 'react';
-import type { Mascot } from '../../domain/entities/Mascot';
 import type { AnimationSpeed, AnimationOptions } from '../../domain/types/MascotTypes';
-import type { MascotService } from '../../application/services/MascotService';
 import { DIContainer } from '../../infrastructure/di/Container';
 
 export interface UseMascotAnimationOptions {
-  mascot?: Mascot | null;
-  autoplay?: boolean;
-  queue?: boolean;
   speed?: AnimationSpeed;
 }
 
@@ -44,7 +39,7 @@ const SPEED_MULTIPLIERS: Record<AnimationSpeed, number> = {
 export function useMascotAnimation(
   options: UseMascotAnimationOptions = {}
 ): UseMascotAnimationReturn {
-  const { mascot, speed = 'normal' } = options;
+  const { speed = 'normal' } = options;
   const [queue, setQueue] = useState<string[]>([]);
 
   const container = DIContainer.getInstance();
@@ -74,18 +69,17 @@ export function useMascotAnimation(
     service.stopAnimation();
   }, [service]);
 
-  const setSpeed = useCallback(() => {
-    // Speed is handled via options in play()
-    console.warn('setSpeed: Use play() with speed option instead');
+  const setSpeed = useCallback((_speed: number) => {
+    // Speed is handled via options in play() - this method is kept for API compatibility
+    // but does nothing as speed should be passed to play() directly
   }, []);
 
-  const setProgress = useCallback(() => {
-    // Progress tracking would need AnimationController reference
-    console.warn('setProgress: Not implemented in service layer yet');
+  const setProgress = useCallback((_progress: number) => {
+    // Progress tracking not yet implemented - would need AnimationController reference
   }, []);
 
   const queueAnimation = useCallback((animationId: string) => {
-    setQueue((prev) => [...prev, animationId]);
+    setQueue((prev: string[]) => [...prev, animationId]);
   }, []);
 
   const clearQueue = useCallback(() => {
@@ -104,10 +98,10 @@ export function useMascotAnimation(
   const processQueue = useCallback(async () => {
     while (queue.length > 0) {
       const nextAnimation = queue[0];
-      setQueue((prev) => prev.slice(1));
+      setQueue((prev: string[]) => prev.slice(1));
       await play(nextAnimation);
     }
-  }, [queue, play]);
+  }, [play, queue]);
 
   return {
     isPlaying: service.isPlaying,

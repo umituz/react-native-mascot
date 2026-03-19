@@ -8,6 +8,9 @@ Interactive mascot system for React Native apps - Customizable animated characte
 - ✅ **Lottie Animations** - Professional JSON animations
 - ✅ **SVG Rendering** - Custom vector graphics
 - ✅ **Mood System** - Dynamic personality and emotions
+- ✅ **State-Based Animations** - 6 predefined states (idle, loading, success, error, empty, guide)
+- ✅ **Auto-Transitions** - Automatic state transitions (e.g., loading → success)
+- ✅ **Size Variants** - Built-in small, medium, large sizes
 - ✅ **Interactive** - Touch-enabled mascots
 - ✅ **Animation Queue** - Sequence animations
 - ✅ **Custom Accessories** - Add glasses, hats, etc.
@@ -98,6 +101,62 @@ function CustomMascotScreen() {
     interactive: true,
     touchEnabled: true
   });
+
+  return <MascotView mascot={mascot} size={150} />;
+}
+```
+
+### State-Based Animations (NEW!)
+
+Inspired by production apps like Vivoim Style, the new state-based system provides predefined animation states with auto-transitions:
+
+```tsx
+import { useMascotState } from '@umituz/react-native-mascot';
+
+function StatefulMascot() {
+  const mascot = useMascotState({
+    initialState: 'idle',
+    size: 'medium',
+    enableAutoTransition: true,
+    onStateChange: (from, to) => console.log(`${from} → ${to}`),
+    onAnimationComplete: (state) => console.log(`Completed: ${state}`)
+  });
+
+  return (
+    <View>
+      {/* Use mascot.state to drive your Lottie animations */}
+      {/* mascot.size: 40 (small), 80 (medium), 120 (large), or custom number */}
+      {/* mascot.isLooping: true for idle/loading/empty/guide, false for success/error */}
+      {/* mascot.duration: animation duration in milliseconds */}
+      {/* mascot.speed: animation speed multiplier */}
+
+      <MascotView
+        mascot={mascot.mascot}
+        size={mascot.size}
+      />
+
+      <Button title="Start Loading" onPress={mascot.startLoading} />
+      <Button title="Success" onPress={mascot.triggerSuccess} />
+      <Button title="Error" onPress={mascot.triggerError} />
+      <Button title="Reset" onPress={mascot.reset} />
+    </View>
+  );
+}
+```
+
+**Available States:**
+- `idle` - Calm breathing animation (default, loops)
+- `loading` - Active processing animation (loops)
+- `success` - Confirmation animation (non-looping, auto-transitions to idle)
+- `error` - Error acknowledgment (non-looping, auto-transitions to idle)
+- `empty` - Empty state invitation (loops)
+- `guide` - Onboarding assistance (loops)
+
+**Auto-Transitions:**
+- `success` → `idle` (after 100ms delay)
+- `error` → `idle` (after 100ms delay)
+- `guide` → `idle` (after 200ms delay)
+- `loading` → `success` or `error` (when you call `stopLoading(success)`)
 
   return <MascotView mascot={mascot} />;
 }

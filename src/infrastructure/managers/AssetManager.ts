@@ -9,10 +9,15 @@ import type {
 } from '../../domain/interfaces/IAssetManager';
 import type { MascotAnimation } from '../../domain/types/MascotTypes';
 
+// Cache size constants
+const DEFAULT_MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+const CACHE_EVICTION_RATIO = 0.3; // Evict 30% of cache when full
+const BYTES_PER_CHAR = 2; // UTF-16 encoding
+
 export class AssetManager implements IAssetManager {
   private readonly _cache: AssetCache;
   private readonly _loadedAssets: Set<string>;
-  private readonly _maxCacheSize: number = 50 * 1024 * 1024; // 50MB
+  private readonly _maxCacheSize: number = DEFAULT_MAX_CACHE_SIZE_BYTES;
   private _currentCacheSize: number = 0;
 
   constructor() {
@@ -119,7 +124,7 @@ export class AssetManager implements IAssetManager {
       .sort(([, a], [, b]) => a.timestamp - b.timestamp);
 
     let freedSpace = 0;
-    const targetSpace = this._maxCacheSize * 0.3; // Evict 30% of cache
+    const targetSpace = this._maxCacheSize * CACHE_EVICTION_RATIO;
 
     for (const [assetId, asset] of sortedAssets) {
       if (freedSpace >= targetSpace) {
@@ -134,8 +139,7 @@ export class AssetManager implements IAssetManager {
   }
 
   private _estimateSize(data: unknown): number {
-    // Rough estimation in bytes
-    return JSON.stringify(data).length * 2; // 2 bytes per char (UTF-16)
+    return JSON.stringify(data).length * BYTES_PER_CHAR;
   }
 
   private _loadSVGFromFile(_source: string): string {

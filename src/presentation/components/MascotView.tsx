@@ -35,7 +35,7 @@ export const MascotView: React.FC<MascotViewProps> = ({
   onLongPress,
   onAnimationFinish,
   resizeMode = 'contain',
-}) => {
+}: MascotViewProps) => {
   const [opacity] = useState(new Animated.Value(0));
   const [scale] = useState(new Animated.Value(0));
 
@@ -133,7 +133,7 @@ const LottieMascot: React.FC<LottieMascotProps> = ({
   animation,
   resizeMode = 'contain',
   onAnimationFinish,
-}) => {
+}: LottieMascotProps) => {
   const lottieRef = useRef<LottieView>(null);
 
   useEffect(() => {
@@ -142,7 +142,7 @@ const LottieMascot: React.FC<LottieMascotProps> = ({
     }
   }, [animation]);
 
-  const source = animation?.source || mascot.animations.find((a) => a.type === 'idle')?.source;
+  const source = animation?.source || mascot.animations.find((a: MascotAnimation) => a.type === 'idle')?.source;
 
   if (!source) {
     return <FallbackMascot mascot={mascot} />;
@@ -167,7 +167,7 @@ interface SVGMascotProps {
   size: number;
 }
 
-const SVGMascot: React.FC<SVGMascotProps> = ({ mascot, size }) => {
+const SVGMascot: React.FC<SVGMascotProps> = ({ mascot, size }: SVGMascotProps) => {
   const { appearance } = mascot;
 
   return (
@@ -258,7 +258,7 @@ interface FallbackMascotProps {
   mascot: Mascot;
 }
 
-const FallbackMascot: React.FC<FallbackMascotProps> = ({ mascot }) => {
+const FallbackMascot: React.FC<FallbackMascotProps> = ({ mascot }: FallbackMascotProps) => {
   const { appearance } = mascot;
 
   return (

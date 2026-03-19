@@ -141,8 +141,8 @@ export class AnimationController implements IAnimationController {
       listeners.forEach((callback) => {
         try {
           callback(data);
-        } catch (error) {
-          console.error(`Error in ${event} event listener:`, error);
+        } catch {
+          // Silently ignore errors in event listeners to prevent breaking the animation system
         }
       });
     }

@@ -64,27 +64,32 @@ export function useMascot(options: UseMascotOptions = {}): UseMascotReturn {
 
   const serviceRef = useRef<MascotService | null>(null);
 
-  // ✅ Initialize service once
-  if (!serviceRef.current) {
-    const container = DIContainer.getInstance();
-    serviceRef.current = container.getMascotService();
+  // ✅ Initialize service once and subscribe to changes
+  useEffect(() => {
+    if (serviceRef.current == null) {
+      const container = DIContainer.getInstance();
+      const service = container.getMascotService();
+      serviceRef.current = service;
 
-    // Subscribe to service changes
-    serviceRef.current.subscribe(() => {
-      const service = serviceRef.current!;
-      setState({
-        mascot: service.mascot,
-        isReady: service.isReady,
-        isPlaying: service.isPlaying,
-        currentAnimation: service.currentAnimation,
+      // Subscribe to service changes
+      const unsubscribe = service.subscribe(() => {
+        setState({
+          mascot: service.mascot,
+          isReady: service.isReady,
+          isPlaying: service.isPlaying,
+          currentAnimation: service.currentAnimation,
+        });
       });
-    });
-  }
 
-  const service = serviceRef.current;
+      return unsubscribe;
+    }
+    return undefined;
+  }, []);
 
   // ✅ Auto-initialize
   useEffect(() => {
+    const service = serviceRef.current;
+    if (!service) return;
     if (autoInitialize && initialConfig) {
       service.initialize(initialConfig);
     } else if (autoInitialize && initialTemplate) {
@@ -95,35 +100,109 @@ export function useMascot(options: UseMascotOptions = {}): UseMascotReturn {
   // ✅ All methods delegate to service - NO business logic!
   return {
     ...state,
-    initialize: useCallback((config: MascotConfig) => service.initialize(config), [service]),
+    initialize: useCallback((config: MascotConfig) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      return service.initialize(config);
+    }, []),
     fromTemplate: useCallback(
-      (template: MascotTemplate, customizations?: Partial<MascotConfig>) =>
-        service.fromTemplate(template, customizations),
-      [service]
+      (template: MascotTemplate, customizations?: Partial<MascotConfig>) => {
+        const service = serviceRef.current;
+        if (!service) throw new Error('Service not initialized');
+        return service.fromTemplate(template, customizations);
+      },
+      []
     ),
-    setMood: useCallback((mood: MascotMood) => service.setMood(mood), [service]),
-    setEnergy: useCallback((energy: number) => service.setEnergy(energy), [service]),
-    setFriendliness: useCallback((friendliness: number) => service.setFriendliness(friendliness), [service]),
-    setPlayfulness: useCallback((playfulness: number) => service.setPlayfulness(playfulness), [service]),
-    cheerUp: useCallback(() => service.cheerUp(), [service]),
-    boostEnergy: useCallback((amount: number) => service.boostEnergy(amount), [service]),
+    setMood: useCallback((mood: MascotMood) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setMood(mood);
+    }, []),
+    setEnergy: useCallback((energy: number) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setEnergy(energy);
+    }, []),
+    setFriendliness: useCallback((friendliness: number) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setFriendliness(friendliness);
+    }, []),
+    setPlayfulness: useCallback((playfulness: number) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setPlayfulness(playfulness);
+    }, []),
+    cheerUp: useCallback(() => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.cheerUp();
+    }, []),
+    boostEnergy: useCallback((amount: number) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.boostEnergy(amount);
+    }, []),
     playAnimation: useCallback(
-      (animationId: string, opts?: AnimationOptions) => service.playAnimation(animationId, opts),
-      [service]
+      (animationId: string, opts?: AnimationOptions) => {
+        const service = serviceRef.current;
+        if (!service) throw new Error('Service not initialized');
+        return service.playAnimation(animationId, opts);
+      },
+      []
     ),
-    stopAnimation: useCallback(() => service.stopAnimation(), [service]),
-    pauseAnimation: useCallback(() => service.pauseAnimation(), [service]),
-    resumeAnimation: useCallback(() => service.resumeAnimation(), [service]),
-    updateAppearance: useCallback((appearance: Partial<MascotAppearance>) => service.updateAppearance(appearance), [service]),
-    setBaseColor: useCallback((color: string) => service.setBaseColor(color), [service]),
-    setAccentColor: useCallback((color: string) => service.setAccentColor(color), [service]),
+    stopAnimation: useCallback(() => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.stopAnimation();
+    }, []),
+    pauseAnimation: useCallback(() => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.pauseAnimation();
+    }, []),
+    resumeAnimation: useCallback(() => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.resumeAnimation();
+    }, []),
+    updateAppearance: useCallback((appearance: Partial<MascotAppearance>) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.updateAppearance(appearance);
+    }, []),
+    setBaseColor: useCallback((color: string) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setBaseColor(color);
+    }, []),
+    setAccentColor: useCallback((color: string) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setAccentColor(color);
+    }, []),
     addAccessory: useCallback(
-      (accessory: { id: string; type: string; color?: string; position?: { x: number; y: number } }) =>
-        service.addAccessory(accessory),
-      [service]
+      (accessory: { id: string; type: string; color?: string; position?: { x: number; y: number } }) => {
+        const service = serviceRef.current;
+        if (!service) throw new Error('Service not initialized');
+        service.addAccessory(accessory);
+      },
+      []
     ),
-    removeAccessory: useCallback((accessoryId: string) => service.removeAccessory(accessoryId), [service]),
-    setVisible: useCallback((visible: boolean) => service.setVisible(visible), [service]),
-    setPosition: useCallback((position: { x: number; y: number }) => service.setPosition(position), [service]),
+    removeAccessory: useCallback((accessoryId: string) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.removeAccessory(accessoryId);
+    }, []),
+    setVisible: useCallback((visible: boolean) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setVisible(visible);
+    }, []),
+    setPosition: useCallback((position: { x: number; y: number }) => {
+      const service = serviceRef.current;
+      if (!service) throw new Error('Service not initialized');
+      service.setPosition(position);
+    }, []),
   };
 }

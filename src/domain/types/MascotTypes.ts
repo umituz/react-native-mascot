@@ -73,3 +73,12 @@ export interface MascotInteraction {
   handler: () => void | Promise<void>;
   animation?: string;
 }
+
+export interface AnimationOptions {
+  speed?: number;
+  loop?: boolean;
+  autoplay?: boolean;
+  onStart?: () => void;
+  onFinish?: () => void;
+  onError?: (error: Error) => void;
+}

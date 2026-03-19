@@ -10,7 +10,37 @@ import type { MascotMood, AnimationSpeed } from './domain/types/MascotTypes';
 export { Mascot } from './domain/entities/Mascot';
 
 // Domain - Value Objects
-export { Mood, EnergyLevel, FriendlinessLevel, PlayfulnessLevel } from './domain/value-objects';
+export { Mood } from './domain/value-objects/Mood';
+export { EnergyLevel } from './domain/value-objects/EnergyLevel';
+export { FriendlinessLevel } from './domain/value-objects/FriendlinessLevel';
+export { PlayfulnessLevel } from './domain/value-objects/PlayfulnessLevel';
+export { AnimationState } from './domain/value-objects/AnimationState';
+
+// Domain - Types - Animation States
+export type {
+  MascotAnimationState,
+  MascotStateConfig,
+  StateTransition,
+  StateHistoryEntry,
+  MascotSize,
+  MascotSizeConfig,
+} from './domain/types/AnimationStateTypes';
+export {
+  DEFAULT_STATE_CONFIGS,
+  DEFAULT_SIZE_CONFIG,
+  STATE_TRANSITIONS,
+} from './domain/types/AnimationStateTypes';
+
+// Application - Services
+export { AnimationStateManager } from './application/services/AnimationStateManager';
+export type { StateManagerConfig } from './application/services/AnimationStateManager';
+
+// Presentation - Hooks
+export { useMascotState } from './presentation/hooks/useMascotState';
+export type {
+  UseMascotStateOptions,
+  UseMascotStateReturn,
+} from './presentation/hooks/useMascotState';
 
 // Domain - Types
 export type {
@@ -132,6 +162,7 @@ export const DEFAULT_ANIMATION_SPEEDS: AnimationSpeed[] = [
 
 // Convenience export - get service instance
 export const getMascotService = () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { DIContainer } = require('./infrastructure/di/Container');
   return DIContainer.getInstance().getMascotService();
 };
