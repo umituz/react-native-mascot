@@ -11,6 +11,7 @@ Interactive mascot system for React Native apps - Customizable animated characte
 - ✅ **State-Based Animations** - 6 predefined states (idle, loading, success, error, empty, guide)
 - ✅ **Auto-Transitions** - Automatic state transitions (e.g., loading → success)
 - ✅ **Size Variants** - Built-in small, medium, large sizes
+- ✅ **Optimized Performance** - LRU cache, React.memo, memory leak prevention
 - ✅ **Interactive** - Touch-enabled mascots
 - ✅ **Animation Queue** - Sequence animations
 - ✅ **Custom Accessories** - Add glasses, hats, etc.

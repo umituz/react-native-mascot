@@ -1,9 +1,9 @@
 /**
- * MascotView Component
- * Main component for rendering mascots
+ * MascotView Component (OPTIMIZED with React.memo)
+ * Main component for rendering mascots with performance optimizations
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { memo, useMemo, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Animated, TouchableOpacity, ViewStyle } from 'react-native';
 import LottieView from 'lottie-react-native';
 import type { AnimationObject } from 'lottie-react-native';
@@ -25,7 +25,25 @@ export interface MascotViewProps {
   resizeMode?: 'cover' | 'contain' | 'center';
 }
 
-export const MascotView: React.FC<MascotViewProps> = ({
+/**
+ * Memoized comparison function for props
+ * Only re-render if props actually change
+ */
+function arePropsEqual(prevProps: MascotViewProps, nextProps: MascotViewProps): boolean {
+  return (
+    prevProps.mascot === nextProps.mascot &&
+    prevProps.animation === nextProps.animation &&
+    prevProps.size === nextProps.size &&
+    prevProps.testID === nextProps.testID &&
+    prevProps.resizeMode === nextProps.resizeMode &&
+    prevProps.onPress === nextProps.onPress &&
+    prevProps.onLongPress === nextProps.onLongPress &&
+    prevProps.onAnimationFinish === nextProps.onAnimationFinish
+    // Note: style is not compared as it could be a new object each time
+  );
+}
+
+const MascotViewComponent: React.FC<MascotViewProps> = ({
   mascot,
   animation,
   size = 200,
@@ -35,10 +53,17 @@ export const MascotView: React.FC<MascotViewProps> = ({
   onLongPress,
   onAnimationFinish,
   resizeMode = 'contain',
-}: MascotViewProps) => {
-  const [opacity] = useState(new Animated.Value(0));
-  const [scale] = useState(new Animated.Value(0));
+}) => {
+  // Create animated values once with useMemo (not on every render)
+  // Must be before early return
+  const animatedValues = useMemo(() => ({
+    opacity: new Animated.Value(0),
+    scale: new Animated.Value(0),
+  }), []);
 
+  const { opacity, scale } = animatedValues;
+
+  // Animation setup
   useEffect(() => {
     if (mascot?.state.isVisible) {
       Animated.parallel([
@@ -63,32 +88,35 @@ export const MascotView: React.FC<MascotViewProps> = ({
     }
   }, [mascot?.state.isVisible, opacity, scale]);
 
-  const handlePress = () => {
-    if (mascot?.touchEnabled && onPress) {
-      onPress();
-    }
-  };
-
-  const handleLongPress = () => {
-    if (mascot?.touchEnabled && onLongPress) {
-      onLongPress();
-    }
-  };
-
-  if (!mascot || !mascot.state.isVisible) {
-    return null;
-  }
-
-  const animatedStyle = {
+  // Memoize styles to prevent recreation
+  const animatedStyle = useMemo(() => ({
     opacity,
     transform: [{ scale }],
-  };
+  }), [opacity, scale]);
 
-  const containerStyle = [
+  const containerStyle = useMemo(() => [
     styles.container,
     { width: size, height: size },
     style,
-  ];
+  ], [size, style]);
+
+  // Memoize handlers to prevent unnecessary re-renders
+  const handlePress = useCallback(() => {
+    if (mascot?.touchEnabled && onPress) {
+      onPress();
+    }
+  }, [mascot?.touchEnabled, onPress]);
+
+  const handleLongPress = useCallback(() => {
+    if (mascot?.touchEnabled && onLongPress) {
+      onLongPress();
+    }
+  }, [mascot?.touchEnabled, onLongPress]);
+
+  // Early return if not visible (after hooks)
+  if (!mascot || !mascot.state.isVisible) {
+    return null;
+  }
 
   return (
     <Animated.View
@@ -120,6 +148,11 @@ export const MascotView: React.FC<MascotViewProps> = ({
   );
 };
 
+// Set display name for debugging
+MascotViewComponent.displayName = 'MascotView';
+
+export const MascotView = memo(MascotViewComponent, arePropsEqual);
+
 // Lottie Mascot Component
 interface LottieMascotProps {
   mascot: Mascot;
@@ -128,22 +161,27 @@ interface LottieMascotProps {
   onAnimationFinish?: () => void;
 }
 
-const LottieMascot: React.FC<LottieMascotProps> = ({
+const LottieMascotComponent: React.FC<LottieMascotProps> = ({
   mascot,
   animation,
   resizeMode = 'contain',
   onAnimationFinish,
-}: LottieMascotProps) => {
+}) => {
   const lottieRef = useRef<LottieView>(null);
 
+  // Memoize animation source to prevent reloads
+  const source = useMemo(() => {
+    return animation?.source || mascot.animations.find((a: MascotAnimation) => a.type === 'idle')?.source;
+  }, [animation?.source, mascot.animations]);
+
+  // Play animation when source changes
   useEffect(() => {
-    if (animation && lottieRef.current) {
+    if (source && lottieRef.current) {
       lottieRef.current.play();
     }
-  }, [animation]);
+  }, [source]);
 
-  const source = animation?.source || mascot.animations.find((a: MascotAnimation) => a.type === 'idle')?.source;
-
+  // Early return if no source (after hooks)
   if (!source) {
     return <FallbackMascot mascot={mascot} />;
   }
@@ -161,13 +199,17 @@ const LottieMascot: React.FC<LottieMascotProps> = ({
   );
 };
 
+LottieMascotComponent.displayName = 'LottieMascot';
+
+const LottieMascot = memo(LottieMascotComponent);
+
 // SVG Mascot Component
 interface SVGMascotProps {
   mascot: Mascot;
   size: number;
 }
 
-const SVGMascot: React.FC<SVGMascotProps> = ({ mascot, size }: SVGMascotProps) => {
+const SVGMascotComponent: React.FC<SVGMascotProps> = ({ mascot, size }) => {
   const { appearance } = mascot;
 
   return (
@@ -196,12 +238,16 @@ const SVGMascot: React.FC<SVGMascotProps> = ({ mascot, size }: SVGMascotProps) =
   );
 };
 
+SVGMascotComponent.displayName = 'SVGMascot';
+
+const SVGMascot = memo(SVGMascotComponent);
+
 // Mood-based mouth
 interface MoodMoodProps {
   mood: string;
 }
 
-const MoodMood: React.FC<MoodMoodProps> = ({ mood }) => {
+const MoodMoodComponent: React.FC<MoodMoodProps> = ({ mood }) => {
   switch (mood) {
     case 'happy':
     case 'excited':
@@ -253,12 +299,16 @@ const MoodMood: React.FC<MoodMoodProps> = ({ mood }) => {
   }
 };
 
+MoodMoodComponent.displayName = 'MoodMood';
+
+const MoodMood = memo(MoodMoodComponent);
+
 // Fallback Mascot
 interface FallbackMascotProps {
   mascot: Mascot;
 }
 
-const FallbackMascot: React.FC<FallbackMascotProps> = ({ mascot }: FallbackMascotProps) => {
+const FallbackMascotComponent: React.FC<FallbackMascotProps> = ({ mascot }) => {
   const { appearance } = mascot;
 
   return (
@@ -268,6 +318,10 @@ const FallbackMascot: React.FC<FallbackMascotProps> = ({ mascot }: FallbackMasco
     </View>
   );
 };
+
+FallbackMascotComponent.displayName = 'FallbackMascot';
+
+const FallbackMascot = memo(FallbackMascotComponent);
 
 const styles = StyleSheet.create({
   container: {

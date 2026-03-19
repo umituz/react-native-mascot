@@ -1,6 +1,7 @@
 /**
- * Animation Controller Implementation
+ * Animation Controller Implementation (OPTIMIZED)
  * Controls Lottie and SVG animations with unified API
+ * Performance optimizations for event system and memory management
  */
 
 import type {
@@ -10,13 +11,23 @@ import type {
 } from '../../domain/interfaces/IAnimationController';
 import type { MascotAnimation } from '../../domain/types/MascotTypes';
 
+// Maximum listeners per event to prevent memory leaks
+const MAX_LISTENERS_PER_EVENT = 10;
+
+// Listener wrapper for cleanup tracking
+interface ListenerWrapper {
+  callback: (data?: unknown) => void;
+  isActive: boolean;
+}
+
 export class AnimationController implements IAnimationController {
   private _currentAnimation: MascotAnimation | null = null;
   private _isPlaying: boolean = false;
   private _isPaused: boolean = false;
   private _progress: number = 0;
   private _speed: number = 1;
-  private _eventListeners: Map<AnimationEvent, Set<(data?: unknown) => void>>;
+  private _eventListeners: Map<AnimationEvent, Set<ListenerWrapper>>;
+  private _animationTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     this._eventListeners = new Map();
@@ -27,6 +38,9 @@ export class AnimationController implements IAnimationController {
     animation: MascotAnimation,
     options?: AnimationOptions
   ): Promise<void> {
+    // Stop any existing animation
+    this._stopCurrentAnimation();
+
     this._currentAnimation = animation;
     this._isPlaying = true;
     this._isPaused = false;
@@ -43,13 +57,14 @@ export class AnimationController implements IAnimationController {
     const adjustedDuration = duration / this._speed;
 
     return new Promise((resolve) => {
-      setTimeout(() => {
+      this._animationTimer = setTimeout(() => {
         if (this._isPlaying && !this._isPaused) {
           this._isPlaying = false;
           this._progress = 1;
           this._emit('finish', { animation: animation.id });
           options?.onFinish?.();
         }
+        this._animationTimer = null;
         resolve();
       }, adjustedDuration);
 
@@ -63,6 +78,13 @@ export class AnimationController implements IAnimationController {
     }
 
     this._isPaused = true;
+
+    // Clear timer if set
+    if (this._animationTimer) {
+      clearTimeout(this._animationTimer);
+      this._animationTimer = null;
+    }
+
     this._emit('pause');
   }
 
@@ -76,6 +98,7 @@ export class AnimationController implements IAnimationController {
   }
 
   stop(): void {
+    this._stopCurrentAnimation();
     this._isPlaying = false;
     this._isPaused = false;
     this._progress = 0;
@@ -110,19 +133,52 @@ export class AnimationController implements IAnimationController {
       this._eventListeners.set(event, new Set());
     }
 
-    this._eventListeners.get(event)!.add(callback);
+    const listeners = this._eventListeners.get(event)!;
+
+    // Check limit to prevent memory leaks
+    if (listeners.size >= MAX_LISTENERS_PER_EVENT) {
+      console.warn(
+        `Maximum listeners (${MAX_LISTENERS_PER_EVENT}) reached for event "${event}". ` +
+        'This may indicate a memory leak. Consider removing unused listeners.'
+      );
+    }
+
+    const wrapper: ListenerWrapper = {
+      callback,
+      isActive: true,
+    };
+
+    listeners.add(wrapper);
 
     // Return unsubscribe function
     return () => {
-      this.off(event, callback);
+      wrapper.isActive = false;
+      listeners.delete(wrapper);
     };
   }
 
   off(event: AnimationEvent, callback: (data?: unknown) => void): void {
     const listeners = this._eventListeners.get(event);
-    if (listeners) {
-      listeners.delete(callback);
+    if (!listeners) {
+      return;
     }
+
+    // Find and remove the matching wrapper
+    for (const wrapper of listeners) {
+      if (wrapper.callback === callback) {
+        wrapper.isActive = false;
+        listeners.delete(wrapper);
+        break;
+      }
+    }
+  }
+
+  /**
+   * Cleanup method (call when unmounting)
+   */
+  destroy(): void {
+    this.stop();
+    this._eventListeners.clear();
   }
 
   // Private Methods
@@ -135,16 +191,64 @@ export class AnimationController implements IAnimationController {
     });
   }
 
+  /**
+   * Stop current animation and clean up timer
+   */
+  private _stopCurrentAnimation(): void {
+    if (this._animationTimer) {
+      clearTimeout(this._animationTimer);
+      this._animationTimer = null;
+    }
+  }
+
+  /**
+   * Emit event to all active listeners (optimized)
+   */
   private _emit(event: AnimationEvent, data?: unknown): void {
     const listeners = this._eventListeners.get(event);
-    if (listeners) {
-      listeners.forEach((callback) => {
-        try {
-          callback(data);
-        } catch {
-          // Silently ignore errors in event listeners to prevent breaking the animation system
-        }
-      });
+    if (!listeners || listeners.size === 0) {
+      return;
+    }
+
+    // Iterate and call only active listeners
+    // Use for...of to avoid iterator allocation
+    for (const wrapper of listeners) {
+      if (!wrapper.isActive) {
+        continue;
+      }
+
+      try {
+        wrapper.callback(data);
+      } catch {
+        // Silently ignore errors in event listeners to prevent breaking the animation system
+        // In production, consider logging to error tracking service
+      }
+    }
+
+    // Clean up inactive listeners periodically
+    if (listeners.size > MAX_LISTENERS_PER_EVENT / 2) {
+      this._cleanupInactiveListeners(event);
+    }
+  }
+
+  /**
+   * Clean up inactive listeners for a specific event
+   */
+  private _cleanupInactiveListeners(event: AnimationEvent): void {
+    const listeners = this._eventListeners.get(event);
+    if (!listeners) {
+      return;
+    }
+
+    const toRemove: ListenerWrapper[] = [];
+    for (const wrapper of listeners) {
+      if (!wrapper.isActive) {
+        toRemove.push(wrapper);
+      }
+    }
+
+    for (const wrapper of toRemove) {
+      listeners.delete(wrapper);
     }
   }
 

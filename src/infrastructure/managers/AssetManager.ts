@@ -1,28 +1,59 @@
 /**
- * Asset Manager Implementation
- * Loads and caches Lottie and SVG assets
+ * Asset Manager Implementation (OPTIMIZED)
+ * Loads and caches Lottie and SVG assets with LRU cache
  */
 
-import type {
-  IAssetManager,
-  AssetCache,
-} from '../../domain/interfaces/IAssetManager';
+import type { IAssetManager } from '../../domain/interfaces/IAssetManager';
 import type { MascotAnimation } from '../../domain/types/MascotTypes';
+import { LRUCache } from '../utils/LRUCache';
 
 // Cache size constants
 const DEFAULT_MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
 const CACHE_EVICTION_RATIO = 0.3; // Evict 30% of cache when full
 const BYTES_PER_CHAR = 2; // UTF-16 encoding
 
-export class AssetManager implements IAssetManager {
-  private readonly _cache: AssetCache;
-  private readonly _loadedAssets: Set<string>;
-  private readonly _maxCacheSize: number = DEFAULT_MAX_CACHE_SIZE_BYTES;
-  private _currentCacheSize: number = 0;
+// Size cache to avoid repeated JSON.stringify calls
+const SIZE_CACHE_MAX_SIZE = 100;
+const sizeCache = new Map<unknown, number>();
 
-  constructor() {
-    this._cache = {};
-    this._loadedAssets = new Set();
+/**
+ * Get estimated size with caching
+ */
+function getEstimatedSize(data: unknown): number {
+  // Check cache first
+  if (sizeCache.has(data)) {
+    return sizeCache.get(data)!;
+  }
+
+  // Calculate and cache
+  const size = JSON.stringify(data).length * BYTES_PER_CHAR;
+
+  // Add to cache if space available
+  if (sizeCache.size < SIZE_CACHE_MAX_SIZE) {
+    sizeCache.set(data, size);
+  }
+
+  return size;
+}
+
+/**
+ * Cache entry with metadata
+ */
+interface CacheEntry {
+  data: unknown;
+  size: number;
+  timestamp: number;
+}
+
+export class AssetManager implements IAssetManager {
+  private readonly lruCache: LRUCache<string, CacheEntry>;
+  private _currentCacheSize: number = 0;
+  private readonly _maxCacheSize: number;
+
+  constructor(maxCacheSize: number = DEFAULT_MAX_CACHE_SIZE_BYTES) {
+    this._maxCacheSize = maxCacheSize;
+    // Cache up to 1000 items (will be limited by size anyway)
+    this.lruCache = new LRUCache<string, CacheEntry>(1000);
   }
 
   loadLottieAnimation(
@@ -30,8 +61,10 @@ export class AssetManager implements IAssetManager {
   ): Promise<MascotAnimation> {
     const assetId = this._getAssetId(source);
 
-    if (this._isAssetLoaded(assetId)) {
-      return Promise.resolve(this._cache[assetId].data as MascotAnimation);
+    // Check LRU cache first (O(1) operation)
+    const cached = this.lruCache.get(assetId);
+    if (cached) {
+      return Promise.resolve(cached.data as MascotAnimation);
     }
 
     // Simulate loading - in real implementation, this would actually load the file
@@ -44,13 +77,16 @@ export class AssetManager implements IAssetManager {
       autoplay: false,
     };
 
+    // Cache the animation
     this._cacheAsset(assetId, animation);
     return Promise.resolve(animation);
   }
 
   loadSVGAsset(source: string): Promise<string> {
-    if (this._isAssetLoaded(source)) {
-      return Promise.resolve(this._cache[source].data as string);
+    // Check LRU cache first
+    const cached = this.lruCache.get(source);
+    if (cached) {
+      return Promise.resolve(cached.data as string);
     }
 
     // Simulate loading - in real implementation, this would load the SVG file
@@ -60,6 +96,7 @@ export class AssetManager implements IAssetManager {
   }
 
   async preloadAnimations(sources: Array<string | object>): Promise<void> {
+    // Load in parallel for better performance
     const promises = sources.map((source) =>
       this.loadLottieAnimation(source)
     );
@@ -67,26 +104,43 @@ export class AssetManager implements IAssetManager {
   }
 
   clearCache(): void {
-    Object.keys(this._cache).forEach((key) => {
-      delete this._cache[key];
-    });
-    this._loadedAssets.clear();
+    this.lruCache.clear();
     this._currentCacheSize = 0;
+    sizeCache.clear(); // Clear size cache too
   }
 
   getAssetUrl(assetId: string): string | null {
-    if (this._isAssetLoaded(assetId)) {
+    if (this.lruCache.has(assetId)) {
       return assetId;
     }
     return null;
   }
 
   isAssetLoaded(assetId: string): boolean {
-    return this._loadedAssets.has(assetId);
+    return this.lruCache.has(assetId);
   }
 
   getLoadedAssets(): string[] {
-    return Array.from(this._loadedAssets);
+    return this.lruCache.keys();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): {
+    size: number;
+    count: number;
+    maxSize: number;
+    usage: number;
+    lruStats: { size: number; capacity: number; usage: number };
+  } {
+    return {
+      size: this._currentCacheSize,
+      count: this.lruCache.size(),
+      maxSize: this._maxCacheSize,
+      usage: this._currentCacheSize / this._maxCacheSize,
+      lruStats: this.lruCache.getStats(),
+    };
   }
 
   // Private Methods
@@ -97,67 +151,80 @@ export class AssetManager implements IAssetManager {
     return JSON.stringify(source);
   }
 
+  /**
+   * Cache asset with LRU eviction
+   */
   private _cacheAsset(assetId: string, data: unknown): void {
-    const size = this._estimateSize(data);
+    const size = getEstimatedSize(data);
 
-    // Check if cache is full
-    if (this._currentCacheSize + size > this._maxCacheSize) {
-      this._evictOldestAssets();
+    // Check if single asset exceeds cache size
+    if (size > this._maxCacheSize) {
+      console.warn(`Asset ${assetId} (${size} bytes) exceeds cache size (${this._maxCacheSize} bytes)`);
+      return;
     }
 
-    this._cache[assetId] = {
+    // Check if updating existing asset
+    const existing = this.lruCache.get(assetId);
+    if (existing) {
+      this._currentCacheSize -= existing.size;
+    }
+
+    // Evict assets if needed (LRU handles this automatically)
+    const spaceNeeded = size - (existing?.size || 0);
+    if (this._currentCacheSize + spaceNeeded > this._maxCacheSize) {
+      this._evictLRUAssets(spaceNeeded);
+    }
+
+    // Add to cache
+    this.lruCache.set(assetId, {
       data,
-      timestamp: Date.now(),
       size,
-    };
+      timestamp: Date.now(),
+    });
 
-    this._loadedAssets.add(assetId);
-    this._currentCacheSize += size;
+    this._currentCacheSize += spaceNeeded;
   }
 
-  private _isAssetLoaded(assetId: string): boolean {
-    return this._loadedAssets.has(assetId) && !!this._cache[assetId];
-  }
-
-  private _evictOldestAssets(): void {
-    const sortedAssets = Object.entries(this._cache)
-      .sort(([, a], [, b]) => a.timestamp - b.timestamp);
+  /**
+   * Evict LRU assets to make space (much faster than sorting)
+   */
+  private _evictLRUAssets(requiredSpace: number): void {
+    const targetSpace = this._maxCacheSize * CACHE_EVICTION_RATIO;
+    const spaceToFree = Math.max(requiredSpace, targetSpace);
 
     let freedSpace = 0;
-    const targetSpace = this._maxCacheSize * CACHE_EVICTION_RATIO;
+    const keysToRemove: string[] = [];
 
-    for (const [assetId, asset] of sortedAssets) {
-      if (freedSpace >= targetSpace) {
+    // Iterate from least recently used (tail) to most recently used (head)
+    const keys = this.lruCache.keys();
+    for (const key of keys) {
+      if (freedSpace >= spaceToFree) {
         break;
       }
 
-      delete this._cache[assetId];
-      this._loadedAssets.delete(assetId);
-      freedSpace += asset.size;
-      this._currentCacheSize -= asset.size;
+      const entry = this.lruCache.get(key);
+      if (entry) {
+        freedSpace += entry.size;
+        keysToRemove.push(key);
+      }
+    }
+
+    // Remove evicted entries
+    for (const key of keysToRemove) {
+      const entry = this.lruCache.get(key);
+      if (entry) {
+        this._currentCacheSize -= entry.size;
+      }
+      this.lruCache.delete(key);
     }
   }
 
-  private _estimateSize(data: unknown): number {
-    return JSON.stringify(data).length * BYTES_PER_CHAR;
-  }
-
+  /**
+   * Load SVG from file (placeholder)
+   */
   private _loadSVGFromFile(_source: string): string {
     // In real implementation, this would use FileSystem or require()
     // For now, return a placeholder
     return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="currentColor"/></svg>`;
-  }
-
-  // Getters
-  get cacheSize(): number {
-    return this._currentCacheSize;
-  }
-
-  get cacheStats(): { size: number; count: number; maxSize: number } {
-    return {
-      size: this._currentCacheSize,
-      count: this._loadedAssets.size,
-      maxSize: this._maxCacheSize,
-    };
   }
 }

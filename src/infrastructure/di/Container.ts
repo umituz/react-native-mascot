@@ -1,6 +1,6 @@
 /**
- * Dependency Injection Container
- * Manages singleton instances and dependencies
+ * DI Container (OPTIMIZED)
+ * Lazy imports with caching and better singleton management
  */
 
 import type { IMascotRepository } from '../../domain/interfaces/IMascotRepository';
@@ -9,12 +9,21 @@ import { AnimationController } from '../controllers/AnimationController';
 import { AssetManager } from '../managers/AssetManager';
 import { MascotRepository } from '../repositories/MascotRepository';
 
+// Cache for lazy-loaded modules
+interface ModuleCache<T> {
+  module: T | null;
+  initialized: boolean;
+}
+
 export class DIContainer {
   private static _instance: DIContainer;
   private _animationController: AnimationController | null = null;
   private _assetManager: AssetManager | null = null;
   private _repository: IMascotRepository | null = null;
-  private _mascotService: MascotService | null = null;
+  private _mascotServiceCache: ModuleCache<MascotService> = {
+    module: null,
+    initialized: false,
+  };
 
   private constructor() {}
 
@@ -56,36 +65,89 @@ export class DIContainer {
   }
 
   /**
-   * Get or create MascotService singleton
+   * Get or create MascotService singleton (with caching)
    */
   getMascotService(): MascotService {
-    if (!this._mascotService) {
+    if (!this._mascotServiceCache.initialized) {
       // Lazy import to avoid circular dependencies
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { MascotService } = require('../../application/services/MascotService');
-      this._mascotService = new MascotService(
+
+      this._mascotServiceCache.module = new MascotService(
         this.getRepository(),
         this.getAnimationController(),
         this.getAssetManager()
       );
+      this._mascotServiceCache.initialized = true;
     }
-    return this._mascotService!;
+
+    return this._mascotServiceCache.module!;
   }
 
   /**
    * Reset all instances (useful for testing)
    */
   reset(): void {
-    this._animationController = null;
+    // Cleanup animation controller
+    if (this._animationController) {
+      this._animationController.destroy();
+      this._animationController = null;
+    }
+
     this._assetManager = null;
     this._repository = null;
-    this._mascotService = null;
+    this._mascotServiceCache = {
+      module: null,
+      initialized: false,
+    };
   }
 
   /**
    * Check if container has been initialized
    */
   isInitialized(): boolean {
-    return this._mascotService !== null;
+    return this._mascotServiceCache.initialized;
+  }
+
+  /**
+   * Get container statistics (for debugging)
+   */
+  getStats(): {
+    singletons: {
+      animationController: boolean;
+      assetManager: boolean;
+      repository: boolean;
+      mascotService: boolean;
+    };
+  } {
+    return {
+      singletons: {
+        animationController: this._animationController !== null,
+        assetManager: this._assetManager !== null,
+        repository: this._repository !== null,
+        mascotService: this._mascotServiceCache.initialized,
+      },
+    };
+  }
+
+  /**
+   * Cleanup method (call when app unmounts)
+   */
+  destroy(): void {
+    // Destroy animation controller
+    if (this._animationController) {
+      this._animationController.destroy();
+      this._animationController = null;
+    }
+
+    // Clear cache
+    this._mascotServiceCache = {
+      module: null,
+      initialized: false,
+    };
+
+    // Reset other singletons
+    this._assetManager = null;
+    this._repository = null;
   }
 }

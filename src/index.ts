@@ -35,12 +35,8 @@ export {
 export { AnimationStateManager } from './application/services/AnimationStateManager';
 export type { StateManagerConfig } from './application/services/AnimationStateManager';
 
-// Presentation - Hooks
-export { useMascotState } from './presentation/hooks/useMascotState';
-export type {
-  UseMascotStateOptions,
-  UseMascotStateReturn,
-} from './presentation/hooks/useMascotState';
+// Infrastructure - Utils
+export { LRUCache } from './infrastructure/utils/LRUCache';
 
 // Domain - Types
 export type {

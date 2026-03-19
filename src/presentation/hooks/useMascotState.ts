@@ -1,10 +1,10 @@
 /**
  * useMascotState Hook
- * State-based mascot hook with auto-transitions
+ * State-based mascot hook with auto-transitions (OPTIMIZED)
  * Inspired by AIStylistMascot implementation
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MascotAnimationState, MascotSize } from '../../domain/types/AnimationStateTypes';
 import { DEFAULT_SIZE_CONFIG } from '../../domain/types/AnimationStateTypes';
 import { AnimationStateManager } from '../../application/services/AnimationStateManager';
@@ -42,7 +42,7 @@ export interface UseMascotStateReturn {
 }
 
 /**
- * Get size in pixels from size variant
+ * Get size in pixels from size variant (memoized)
  */
 function getSizePixels(size: MascotSize): number {
   if (typeof size === 'number') {
@@ -61,55 +61,76 @@ export function useMascotState(options: UseMascotStateOptions = {}): UseMascotSt
   } = options;
 
   const [state, setState] = useState<MascotAnimationState>(initialState);
-  const [animationState, setAnimationState] = useState<AnimationState>(() =>
-    AnimationState.create(initialState)
+
+  // Memoize size to avoid recalculation
+  const size = useMemo(() => getSizePixels(sizeVariant), [sizeVariant]);
+
+  // Memoize animation state to avoid unnecessary recreations
+  const animationState = useMemo(
+    () => AnimationState.create(state),
+    [state]
   );
 
-  const size = getSizePixels(sizeVariant);
-  const stateManagerRef = useRef<AnimationStateManager | null>(null);
+  // Stable refs for callbacks to prevent unnecessary re-renders
+  const onStateChangeRef = useRef(onStateChange);
+  const onAnimationCompleteRef = useRef(onAnimationComplete);
 
-  // Initialize state manager
+  // Update refs without causing re-renders
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange;
+    onAnimationCompleteRef.current = onAnimationComplete;
+  });
+
+  const stateManagerRef = useRef<AnimationStateManager | null>(null);
+  const cleanupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize state manager (only once)
   useEffect(() => {
     const manager = new AnimationStateManager(initialState, {
       enableAutoTransition,
       onStateChange: (from, to) => {
         setState(to);
-        setAnimationState(AnimationState.create(to));
-        onStateChange?.(from, to);
+        onStateChangeRef.current?.(from, to);
       },
     });
 
     stateManagerRef.current = manager;
 
     return () => {
+      // Clear any pending cleanup timeout
+      const cleanupTimeout = cleanupTimeoutRef.current;
+      if (cleanupTimeout) {
+        clearTimeout(cleanupTimeout);
+        cleanupTimeoutRef.current = null;
+      }
+      // Destroy state manager and clear all timers
       manager.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update animation state when state changes externally
-  useEffect(() => {
-    setAnimationState(AnimationState.create(state));
-  }, [state]);
-
-  // Handle animation completion
+  // Optimized animation completion handler with proper cleanup
   useEffect(() => {
     if (!animationState.shouldLoop()) {
       const duration = animationState.getDuration();
+
       const timeout = setTimeout(() => {
-        onAnimationComplete?.(state);
+        onAnimationCompleteRef.current?.(state);
       }, duration);
 
-      return () => clearTimeout(timeout);
+      return () => {
+        clearTimeout(timeout);
+      };
     }
     return undefined;
-  }, [state, animationState, onAnimationComplete]);
+  }, [state, animationState]);
 
+  // Memoized callbacks to prevent unnecessary re-renders
   const setStateCallback = useCallback((newState: MascotAnimationState) => {
     const manager = stateManagerRef.current;
     if (!manager) {
       setState(newState);
-      onStateChange?.(state, newState);
+      onStateChangeRef.current?.(state, newState);
       return;
     }
 
@@ -118,9 +139,9 @@ export function useMascotState(options: UseMascotStateOptions = {}): UseMascotSt
     } catch (error) {
       console.warn('Invalid state transition:', error);
       setState(newState);
-      onStateChange?.(state, newState);
+      onStateChangeRef.current?.(state, newState);
     }
-  }, [state, onStateChange]);
+  }, [state]);
 
   const triggerSuccess = useCallback(() => {
     const manager = stateManagerRef.current;
