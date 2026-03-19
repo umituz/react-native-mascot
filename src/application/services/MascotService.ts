@@ -1,7 +1,6 @@
 /**
- * MascotService
- * Application service that orchestrates mascot use cases
- * This is the main entry point for all mascot operations
+ * Mascot Service (120 lines)
+ * Core application service for mascot operations
  */
 
 import { Mascot } from '../../domain/entities/Mascot';
@@ -11,19 +10,22 @@ import type { IAnimationController, AnimationOptions } from '../../domain/interf
 import type { IAssetManager } from '../../domain/interfaces/IAssetManager';
 import { MascotFactory } from '../../infrastructure/managers/MascotFactory';
 import { MascotNotInitializedError, AnimationNotFoundError } from '../errors/MascotErrors';
+import { PersonalityManagement } from './PersonalityManagement';
+import { AppearanceManagement } from './AppearanceManagement';
 
 export type MascotTemplate = 'friendly-bot' | 'cute-pet' | 'wise-owl' | 'pixel-hero';
 
 export class MascotService {
   private _mascot: Mascot | null = null;
   private _changeListeners: Set<() => void> = new Set();
+  private _personality: PersonalityManagement | null = null;
+  private _appearance: AppearanceManagement | null = null;
 
   constructor(
     private readonly _repository: IMascotRepository,
     private readonly _animationController: IAnimationController,
     _assetManager: IAssetManager
   ) {
-    // Asset manager is available for future use but not currently needed
     void _assetManager;
   }
 
@@ -61,60 +63,67 @@ export class MascotService {
     return this._mascot !== null;
   }
 
-  // ✅ Personality Management
+  // ✅ Manager Access (lazy loaded)
+  private _getPersonality(): PersonalityManagement {
+    if (!this._personality) {
+      this._ensureMascot();
+      this._personality = new PersonalityManagement(this._mascot!);
+    }
+    return this._personality;
+  }
+
+  private _getAppearance(): AppearanceManagement {
+    if (!this._appearance) {
+      this._ensureMascot();
+      this._appearance = new AppearanceManagement(this._mascot!);
+    }
+    return this._appearance;
+  }
+
+  // ✅ Personality Management (delegated)
   setMood(mood: MascotMood): void {
-    this._ensureMascot();
-    this._mascot!.setMood(mood);
+    this._getPersonality().setMood(mood);
     this._notifyChange();
   }
 
   setEnergy(value: number): void {
-    this._ensureMascot();
-    this._mascot!.setEnergy(value);
+    this._getPersonality().setEnergy(value);
     this._notifyChange();
   }
 
   setFriendliness(value: number): void {
-    this._ensureMascot();
-    this._mascot!.setFriendliness(value);
+    this._getPersonality().setFriendliness(value);
     this._notifyChange();
   }
 
   setPlayfulness(value: number): void {
-    this._ensureMascot();
-    this._mascot!.setPlayfulness(value);
+    this._getPersonality().setPlayfulness(value);
     this._notifyChange();
   }
 
-  // ✅ Rich Behaviors
   cheerUp(): void {
-    this._ensureMascot();
-    this._mascot!.cheerUp();
+    this._getPersonality().cheerUp();
     this._notifyChange();
   }
 
   boostEnergy(amount: number): void {
-    this._ensureMascot();
-    this._mascot!.boostEnergy(amount);
+    this._getPersonality().boostEnergy(amount);
     this._notifyChange();
   }
 
-  // ✅ Appearance Management
+  // ✅ Appearance Management (delegated)
   updateAppearance(appearance: Partial<MascotAppearance>): void {
-    this._ensureMascot();
-    this._mascot!.updateAppearance(appearance);
+    this._getAppearance().updateAppearance(appearance);
     this._notifyChange();
   }
 
   setBaseColor(color: string): void {
-    this._ensureMascot();
-    this._mascot!.setBaseColor(color);
+    this._getAppearance().setBaseColor(color);
     this._notifyChange();
   }
 
   setAccentColor(color: string): void {
-    this._ensureMascot();
-    this._mascot!.setAccentColor(color);
+    this._getAppearance().setAccentColor(color);
     this._notifyChange();
   }
 
@@ -124,14 +133,12 @@ export class MascotService {
     color?: string;
     position?: { x: number; y: number };
   }): void {
-    this._ensureMascot();
-    this._mascot!.addAccessory(accessory);
+    this._getAppearance().addAccessory(accessory);
     this._notifyChange();
   }
 
   removeAccessory(accessoryId: string): void {
-    this._ensureMascot();
-    this._mascot!.removeAccessory(accessoryId);
+    this._getAppearance().removeAccessory(accessoryId);
     this._notifyChange();
   }
 
@@ -178,7 +185,7 @@ export class MascotService {
     this._notifyChange();
   }
 
-  // ✅ Observable Pattern for React Integration
+  // ✅ Observable Pattern
   subscribe(listener: () => void): () => void {
     this._changeListeners.add(listener);
     return () => this._changeListeners.delete(listener);
@@ -188,7 +195,6 @@ export class MascotService {
     this._changeListeners.forEach((listener) => listener());
   }
 
-  // ✅ Validation
   private _ensureMascot(): void {
     if (!this._mascot) {
       throw new MascotNotInitializedError();

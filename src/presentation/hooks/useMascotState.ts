@@ -135,7 +135,7 @@ export function useMascotState(options: UseMascotStateOptions = {}): UseMascotSt
     }
 
     try {
-      manager.transitionTo(newState, 'user');
+      manager.transitionTo(newState);
     } catch (error) {
       console.warn('Invalid state transition:', error);
       setState(newState);
