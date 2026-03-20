@@ -49,19 +49,22 @@
     "url": "https://github.com/umituz/react-native-mascot"
   },
   "dependencies": {
-    "lottie-react-native": "^7.3.4",
-    "react-native-reanimated": "^3.16.2"
+    "lottie-react-native": "^7.3.4"
   },
   "peerDependencies": {
     "@umituz/react-native-design-system": "*",
     "expo": ">=54.0.0",
     "react": ">=19.0.0",
     "react-native": "*",
+    "react-native-reanimated": ">=3.0.0",
     "react-native-svg": ">=15.0.0"
   },
   "peerDependenciesMeta": {
     "@umituz/react-native-design-system": {
       "optional": true
+    },
+    "react-native-reanimated": {
+      "optional": false
     }
   },
   "devDependencies": {
