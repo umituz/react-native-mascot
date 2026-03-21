@@ -25,7 +25,7 @@ const SVGMascotComponent = memo<SVGMascotProps>(({ mascot, size }) => {
       <circle cx="35" cy="40" r="5" fill="#000" />
       <circle cx="65" cy="40" r="5" fill="#000" />
       {/* Mouth based on mood */}
-      <MoodMood mood={mascot.personality.mood} />
+      <MoodExpression mood={mascot.personality.mood} />
     </Svg>
   );
 });
@@ -35,11 +35,11 @@ SVGMascotComponent.displayName = 'SVGMascot';
 export const SVGMascot = SVGMascotComponent;
 
 // Mood-based mouth component
-interface MoodMoodProps {
+interface MoodExpressionProps {
   mood: string;
 }
 
-const MoodMoodComponent = memo<MoodMoodProps>(({ mood }) => {
+const MoodExpressionComponent = memo<MoodExpressionProps>(({ mood }) => {
   switch (mood) {
     case 'happy':
     case 'excited':
@@ -56,6 +56,6 @@ const MoodMoodComponent = memo<MoodMoodProps>(({ mood }) => {
   }
 });
 
-MoodMoodComponent.displayName = 'MoodMood';
+MoodExpressionComponent.displayName = 'MoodExpression';
 
-const MoodMood = memo(MoodMoodComponent);
+const MoodExpression = memo(MoodExpressionComponent);

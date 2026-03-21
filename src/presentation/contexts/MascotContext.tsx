@@ -3,7 +3,7 @@
  * Thin wrapper that provides MascotService to components
  */
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import type { Mascot } from '../../domain/entities/Mascot';
 import type { MascotConfig } from '../../domain/types/MascotTypes';
 import type { MascotService, MascotTemplate } from '../../application/services/MascotService';
@@ -33,11 +33,13 @@ export const MascotProvider: React.FC<MascotProviderProps> = ({
   const service = container.getMascotService();
 
   // Auto-initialize if config or template provided
-  if (initialConfig) {
-    service.initialize(initialConfig);
-  } else if (template) {
-    service.fromTemplate(template);
-  }
+  useEffect(() => {
+    if (initialConfig) {
+      service.initialize(initialConfig);
+    } else if (template) {
+      service.fromTemplate(template);
+    }
+  }, [initialConfig, template, service]);
 
   const value: MascotContextValue = {
     mascot: service.mascot,

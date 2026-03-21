@@ -137,7 +137,7 @@ export function useMascotState(options: UseMascotStateOptions = {}): UseMascotSt
     try {
       manager.transitionTo(newState);
     } catch (error) {
-      console.warn('Invalid state transition:', error);
+      // Invalid state transition - allow the transition anyway for flexibility
       setState(newState);
       onStateChangeRef.current?.(state, newState);
     }
