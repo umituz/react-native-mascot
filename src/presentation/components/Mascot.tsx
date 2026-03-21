@@ -1,14 +1,14 @@
 /**
- * SimpleMascot Component
+ * Mascot Component
  *
  * A simplified, configurable mascot component that works across different apps.
  * Uses Reanimated animations and accepts dynamic theme colors and image sources.
  *
  * @example
  * ```tsx
- * import { SimpleMascot } from '@umituz/react-native-mascot';
+ * import { Mascot } from '@umituz/react-native-mascot';
  *
- * <SimpleMascot
+ * <Mascot
  *   source={require('../assets/mascot.png')}
  *   state="thinking"
  *   size="large"
@@ -33,7 +33,7 @@ import Animated, {
 
 import type { MascotState } from './types';
 
-export interface SimpleMascotProps {
+export interface MascotProps {
   /** Image source for the mascot (require() or URI) */
   source: ImageSource;
 
@@ -74,7 +74,7 @@ const SIZE_PRESETS: Record<string, number> = {
   large: 140,
 };
 
-function SimpleMascotComponent({
+function MascotComponent({
   source,
   state = 'idle',
   size = 'medium',
@@ -83,7 +83,7 @@ function SimpleMascotComponent({
   animate = true,
   style,
   testID = 'simple-mascot',
-}: SimpleMascotProps) {
+}: MascotProps) {
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -238,16 +238,16 @@ function SimpleMascotComponent({
       </Animated.View>
       {message ? (
         <View style={[styles.messageContainer, { backgroundColor }]}>
-          <SimpleMascotText style={{ color: textColor }}>{message}</SimpleMascotText>
+          <MascotText style={{ color: textColor }}>{message}</MascotText>
         </View>
       ) : null}
     </View>
   );
 }
 
-SimpleMascotComponent.displayName = 'SimpleMascot';
+MascotComponent.displayName = 'Mascot';
 
-const SimpleMascotText = memo(({ style, children }: { style: any; children: React.ReactNode }) => (
+const MascotText = memo(({ style, children }: { style: any; children: React.ReactNode }) => (
   <View>
     {typeof children === 'string' ? (
       <Animated.Text style={style}>{children}</Animated.Text>
@@ -257,7 +257,7 @@ const SimpleMascotText = memo(({ style, children }: { style: any; children: Reac
   </View>
 ));
 
-export const SimpleMascot = memo(SimpleMascotComponent);
+export const Mascot = memo(MascotComponent);
 
 const styles = StyleSheet.create({
   container: {
