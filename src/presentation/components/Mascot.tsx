@@ -21,7 +21,7 @@
  */
 
 import React, { useEffect, memo } from 'react';
-import { View, Image, StyleSheet, ViewStyle, ImageSourcePropType } from 'react-native';
+import { View, Image, StyleSheet, ViewStyle, ImageSourcePropType, TextStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -32,6 +32,9 @@ import Animated, {
 } from '@umituz/react-native-animation';
 
 import type { MascotState } from './types';
+
+// Constants
+const CIRCULAR_RADIUS = 9999;
 
 export interface MascotProps {
   /** Image source for the mascot (require() or URI) */
@@ -247,7 +250,12 @@ function MascotComponent({
 
 MascotComponent.displayName = 'Mascot';
 
-const MascotText = memo(({ style, children }: { style: any; children: React.ReactNode }) => (
+interface MascotTextProps {
+  style: TextStyle;
+  children: React.ReactNode;
+}
+
+const MascotTextComponent = ({ style, children }: MascotTextProps) => (
   <View>
     {typeof children === 'string' ? (
       <Animated.Text style={style}>{children}</Animated.Text>
@@ -255,7 +263,11 @@ const MascotText = memo(({ style, children }: { style: any; children: React.Reac
       children
     )}
   </View>
-));
+);
+
+MascotTextComponent.displayName = 'MascotText';
+
+const MascotText = memo(MascotTextComponent);
 
 export const Mascot = memo(MascotComponent);
 
@@ -264,7 +276,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   glow: {
-    borderRadius: 9999, // Circular
+    borderRadius: CIRCULAR_RADIUS,
     position: 'absolute',
   },
   glowContainer: {
@@ -273,7 +285,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   mascotImage: {
-    borderRadius: 9999, // Circular
+    borderRadius: CIRCULAR_RADIUS,
   },
   messageContainer: {
     borderRadius: 12,

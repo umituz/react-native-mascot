@@ -52,7 +52,7 @@
     "lottie-react-native": "^7.3.4"
   },
   "peerDependencies": {
-    "@umituz/react-native-animation": "*",
+    "@umituz/react-native-animation": "^1.3.17",
     "@umituz/react-native-design-system": "*",
     "expo": ">=54.0.0",
     "react": ">=19.0.0",

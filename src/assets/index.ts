@@ -6,13 +6,13 @@
 import type { MascotConfig, MascotAnimationType } from '../domain/types/MascotTypes';
 import type { MascotAnimation } from '../domain/types/MascotTypes';
 
-// Import JSON animations
-import idleAnim from './lottie/idle.json';
-import waveAnim from './lottie/wave.json';
-import jumpAnim from './lottie/jump.json';
-import successAnim from './lottie/success.json';
-import errorAnim from './lottie/error.json';
-import danceAnim from './lottie/dance.json';
+// Import JSON animations from infrastructure/assets
+import idleAnim from '../infrastructure/assets/lottie/idle.json';
+import waveAnim from '../infrastructure/assets/lottie/wave.json';
+import jumpAnim from '../infrastructure/assets/lottie/jump.json';
+import successAnim from '../infrastructure/assets/lottie/success.json';
+import errorAnim from '../infrastructure/assets/lottie/error.json';
+import danceAnim from '../infrastructure/assets/lottie/dance.json';
 
 export const BUILT_IN_MASCOTS: Record<string, MascotConfig> = {
   'happy-robot': {

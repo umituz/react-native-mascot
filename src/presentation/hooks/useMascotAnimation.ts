@@ -14,14 +14,11 @@ export interface UseMascotAnimationOptions {
 export interface UseMascotAnimationReturn {
   isPlaying: boolean;
   currentAnimation: string | null;
-  progress: number;
   queue: string[];
   play: (animationId: string, options?: AnimationOptions) => Promise<void>;
   pause: () => void;
   resume: () => void;
   stop: () => void;
-  setSpeed: (speed: number) => void;
-  setProgress: (progress: number) => void;
   queueAnimation: (animationId: string) => void;
   clearQueue: () => void;
   playSequence: (animationIds: string[]) => Promise<void>;
@@ -69,15 +66,6 @@ export function useMascotAnimation(
     service.stopAnimation();
   }, [service]);
 
-  const setSpeed = useCallback((_speed: number) => {
-    // Speed is handled via options in play() - this method is kept for API compatibility
-    // but does nothing as speed should be passed to play() directly
-  }, []);
-
-  const setProgress = useCallback((_progress: number) => {
-    // Progress tracking not yet implemented - would need AnimationController reference
-  }, []);
-
   const queueAnimation = useCallback((animationId: string) => {
     setQueue((prev: string[]) => [...prev, animationId]);
   }, []);
@@ -106,14 +94,11 @@ export function useMascotAnimation(
   return {
     isPlaying: service.isPlaying,
     currentAnimation: service.currentAnimation,
-    progress: 0, // Would need AnimationController reference
     queue,
     play,
     pause,
     resume,
     stop,
-    setSpeed,
-    setProgress,
     queueAnimation,
     clearQueue,
     playSequence,
