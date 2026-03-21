@@ -7,7 +7,7 @@
 export { MascotView } from './presentation/components/MascotView';
 export type { MascotViewProps } from './presentation/components/MascotView';
 
-export { Mascot } from './presentation/components/Mascot';
+export { Mascot as MascotComponent } from './presentation/components/Mascot';
 export type { MascotProps } from './presentation/components/Mascot';
 
 export { LottieMascot } from './presentation/components/LottieMascot';
