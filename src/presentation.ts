@@ -17,7 +17,7 @@ export { SVGMascot } from './presentation/components/SVGMascot';
 export type { SVGMascotProps } from './presentation/components/SVGMascot';
 
 // Presentation - Types
-export type { MascotState, MascotSize, MascotTheme } from './presentation/components/types';
+export type { MascotTheme } from './presentation/components/types';
 
 // Presentation - Hooks
 export { useMascot } from './presentation/hooks/useMascot';

@@ -21,7 +21,7 @@
  */
 
 import React, { useEffect, memo } from 'react';
-import { View, Image, StyleSheet, ViewStyle, ImageSource } from 'react-native';
+import { View, Image, StyleSheet, ViewStyle, ImageSourcePropType } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -35,7 +35,7 @@ import type { MascotState } from './types';
 
 export interface MascotProps {
   /** Image source for the mascot (require() or URI) */
-  source: ImageSource;
+  source: ImageSourcePropType;
 
   /** Animation state */
   state?: MascotState;

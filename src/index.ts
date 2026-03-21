@@ -11,6 +11,9 @@ export * from './application';
 export * from './infrastructure';
 export * from './presentation';
 
+// Direct component export for convenience
+export { Mascot } from './presentation/components/Mascot';
+
 // Constants
 import type { MascotMood, AnimationSpeed } from './domain/types/MascotTypes';
 
