@@ -4,7 +4,7 @@
  */
 
 // Domain - Entities
-export { Mascot } from './domain/entities/Mascot';
+export { Mascot as MascotEntity } from './domain/entities/Mascot';
 
 // Domain - Value Objects
 export { Mood } from './domain/value-objects/Mood';
